@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Project data/artifacts
+CV/Database/
+CV/output/
+
+# Environment and local clutter
+venv/
+.venv/
+*.log
