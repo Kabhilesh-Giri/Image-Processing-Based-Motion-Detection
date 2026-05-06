@@ -5,10 +5,17 @@ from typing import Callable, Dict, Any, Optional, Tuple
 import ipywidgets as W
 from IPython.display import clear_output
 import threading
+from pathlib import Path
+
+import src.Utilities as utilities_mod
+
+
+DEFAULT_DATABASE_ROOT = str(Path(__file__).resolve().parents[1] / "Database")
 
 
 def build_gui(
     video_options,
+    default_database_root: str = DEFAULT_DATABASE_ROOT,
     default_video: Optional[str] = None,
     default_smoothing: str = "box3",
     default_smoothing_sigma: float = 1.0,
@@ -31,6 +38,26 @@ def build_gui(
     # -----------------------------
     # Widgets
     # -----------------------------
+    def _default_output_root(database_root: str) -> str:
+        db = Path(database_root)
+        parent = db.parent if db.parent != db else db
+        return str(parent / "Kabhilesh-Aidan-Project-Output")
+
+    db_root_text = W.Text(
+        value=str(default_database_root),
+        description="Database:",
+        layout=W.Layout(width="800px"),
+        style={"description_width": "initial"},
+    )
+    refresh_btn = W.Button(description="Refresh Videos", button_style="info")
+
+    output_root_text = W.Text(
+        value=_default_output_root(default_database_root),
+        description="Output Root:",
+        layout=W.Layout(width="800px"),
+        style={"description_width": "initial"},
+    )
+
     video_dd = W.Dropdown(
         options=video_options,
         value=(
@@ -44,8 +71,8 @@ def build_gui(
 
     smoothing_toggle = W.ToggleButtons(
         options=[
-            ("3×3 Box", "box3"),
-            ("5×5 Box", "box5"),
+            ("3x3 Box", "box3"),
+            ("5x5 Box", "box5"),
             ("Sigma", "sigma"),
             ("None", "none"),
         ],
@@ -66,7 +93,7 @@ def build_gui(
     temporal_toggle = W.ToggleButtons(
         options=[
             ("1-D differential operator", "op1d"),
-            ("simple 0.5[−1, 0, 1]", "centered"),
+            ("simple 0.5[-1, 0, 1]", "centered"),
             ("1D derivative of a Gaussian", "dog"),
         ],
         value=default_temporal,
@@ -108,6 +135,16 @@ def build_gui(
     run_btn = W.Button(description="Run", button_style="success")
     out = W.Output()
 
+    def _refresh_videos_and_output():
+        db_root = db_root_text.value.strip()
+        output_root_text.value = _default_output_root(db_root)
+        options = utilities_mod.list_sequence_folders(db_root)
+        video_dd.options = options
+        if options:
+            video_dd.value = options[0]
+        else:
+            video_dd.value = None
+
     # -----------------------------
     # Show/hide logic
     # -----------------------------
@@ -132,9 +169,21 @@ def build_gui(
         if change.get("name") == "value":
             _refresh_visibility()
 
+    def on_refresh_clicked(_):
+        out.clear_output(wait=True)
+        try:
+            _refresh_videos_and_output()
+            with out:
+                print(f"Loaded {len(video_dd.options)} sequence folders.")
+        except Exception as e:
+            with out:
+                print("Failed to load database path:")
+                print(e)
+
     smoothing_toggle.observe(on_smoothing_change, names="value")
     temporal_toggle.observe(on_temporal_change, names="value")
     threshold_toggle.observe(on_threshold_change, names="value")
+    refresh_btn.on_click(on_refresh_clicked)
     _refresh_visibility()
 
     # -----------------------------
@@ -145,11 +194,18 @@ def build_gui(
             raise ValueError("No video selected.")
 
         cfg: Dict[str, Any] = {
+            "database_root": db_root_text.value.strip(),
             "video_path": video_dd.value,
+            "output_root": output_root_text.value.strip(),
             "smoothing": {"mode": smoothing_toggle.value},
             "temporal": {"mode": temporal_toggle.value},
             "threshold": {"mode": threshold_toggle.value},
         }
+
+        if not cfg["database_root"]:
+            raise ValueError("Database path is required.")
+        if not cfg["output_root"]:
+            raise ValueError("Output root is required.")
 
         if smoothing_toggle.value == "sigma":
             s = float(smoothing_sigma.value)
@@ -209,6 +265,8 @@ def build_gui(
     # -----------------------------
     ui = W.VBox(
         [
+            W.HBox([db_root_text, refresh_btn]),
+            output_root_text,
             video_dd,
             W.HBox([smoothing_toggle, smoothing_sigma_row]),
             W.HBox([temporal_toggle, dog_row]),

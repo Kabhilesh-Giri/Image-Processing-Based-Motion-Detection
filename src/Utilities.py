@@ -9,6 +9,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+DEFAULT_DATABASE_ROOT = str(Path(__file__).resolve().parents[1] / "Database")
+
+
 def play_side_by_side(frame_iter, fps=30, figsize=(12, 4), out=None):
     """
     frame_iter yields:
@@ -45,7 +48,7 @@ def play_side_by_side(frame_iter, fps=30, figsize=(12, 4), out=None):
             for i, (frame, title) in enumerate(zip(frames, titles)):
                 img = frame
 
-                # BGR → RGB if needed
+                # BGR -> RGB if needed
                 if img.ndim == 3 and img.shape[2] == 3:
                     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     ims[i].set_cmap(None)
@@ -245,11 +248,11 @@ def multi_view_generator(
             "Original",
             "Grayscale",
             "Simple Derivative 0.5[-1,0,1]",
-            *(f"DoG Derivative σ={s}" for s in sigma_values),
+            *(f"DoG Derivative sigma={s}" for s in sigma_values),
             "Threshold (Simple)",
-            *(f"Threshold (DoG σ={s})" for s in sigma_values),
+            *(f"Threshold (DoG sigma={s})" for s in sigma_values),
             "Masked (Simple)",
-            *(f"Masked (DoG σ={s})" for s in sigma_values),
+            *(f"Masked (DoG sigma={s})" for s in sigma_values),
         ]
 
         yield idx, frames, titles
@@ -265,7 +268,7 @@ class RunConfig:
 _CFG = RunConfig()
 
 
-def build_run_config_ui(root=r"F:\ML\CV\Database"):
+def build_run_config_ui(root=DEFAULT_DATABASE_ROOT):
     """
     Shows a simple UI:
       - dropdown for sequence folder
@@ -334,7 +337,7 @@ def get_run_config() -> RunConfig:
     return _CFG
 
 
-def list_sequence_folders(db_root=r"F:\ML\CV\Database"):
+def list_sequence_folders(db_root=DEFAULT_DATABASE_ROOT):
     root = Path(db_root)
     if not root.exists():
         raise FileNotFoundError(f"Database folder not found: {db_root}")

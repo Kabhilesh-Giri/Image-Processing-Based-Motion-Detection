@@ -4,6 +4,9 @@ from pathlib import Path
 import numpy as np
 
 
+DEFAULT_DATABASE_ROOT = str(Path(__file__).resolve().parents[1] / "Database")
+
+
 class ImageSequenceReader:
     def __init__(self, folder_path: str, extensions=(".jpg", ".jpeg", ".png")):
         self.folder = Path(folder_path)
@@ -72,7 +75,7 @@ class ImageSequenceReader:
         return np.stack(bgr_frames, axis=0), np.stack(gray_frames, axis=0)
 
 
-def pick_sequence_folder(db_root=r"F:\ML\CV\Database") -> str:
+def pick_sequence_folder(db_root=DEFAULT_DATABASE_ROOT) -> str:
     root = Path(db_root)
     if not root.exists():
         raise FileNotFoundError(f"Database folder not found: {db_root}")

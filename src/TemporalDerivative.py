@@ -1,7 +1,7 @@
 import cv2
 from abc import ABC, abstractmethod
+from collections import deque
 import numpy as np
-from pyparsing import deque
 import scipy.ndimage
 
 
@@ -99,7 +99,7 @@ class OneDCenteredDifference(TemporalDerivativeStrategy):
         # centered difference
         deriv = 0.5 * (next_ - prev)
 
-        # for visualization only (signed → magnitude)
+        # for visualization only (signed -> magnitude)
         deriv = np.abs(deriv)
 
         return np.clip(deriv, 0, 255).astype(np.uint8)
